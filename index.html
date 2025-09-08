@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rubik Cube • Three.js</title>
+    <style>
+      html, body, #app { height: 100%; margin: 0; }
+      canvas { display: block; }
+      .hud {
+        position: fixed; left: 12px; bottom: 12px; padding: 8px 10px;
+        background: rgba(0,0,0,0.5); color: #fff; font: 12px/1.4 system-ui, sans-serif;
+        border-radius: 6px;
+      }
+      .hud kbd { background:#222; padding:2px 5px; border-radius:4px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div class="hud">
+      <div>Camera: Orbit (drag), Zoom (wheel)</div>
+      <div>Moves: <kbd>U</kbd>/<kbd>R</kbd>/<kbd>F</kbd> (+ Shift = prime)</div>
+      <div>Scramble: <kbd>S</kbd> · Reset: <kbd>0</kbd></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+  </html>
+
