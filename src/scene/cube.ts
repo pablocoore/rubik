@@ -47,7 +47,6 @@ export function createRubiksCube(spec: RubikSpec): THREE.Group {
       }
     }
   }
-
   return group;
 }
 
