@@ -168,6 +168,37 @@ const drag: DragState = {
   picked: null
 };
 
+let pivot: THREE.Object3D | null = null;
+let selected: THREE.Object3D[] = [];
+let layerAxis: Axis | null = null;
+let layerVal = 0;
+let axisDir = 1; // direction of principal axis
+let useT1 = true; // chosen tangent basis for sign
+let currentAngle = 0;
+
+// Highlighting
+const originalEmissive = new WeakMap<THREE.Material, number>();
+function setHighlighted(objs: THREE.Object3D[], on: boolean) {
+  const color = 0xffe066;
+  for (const obj of objs) {
+    const mesh = obj as THREE.Mesh;
+    const mat = (mesh as any).material as THREE.Material | THREE.Material[] | undefined;
+    const mats = Array.isArray(mat) ? mat : mat ? [mat] : [];
+    for (const m of mats) {
+      const ms = m as any;
+      if (ms && 'emissive' in ms) {
+        if (on) {
+          if (!originalEmissive.has(m)) originalEmissive.set(m, ms.emissive.getHex());
+          ms.emissive.setHex(color);
+        } else if (originalEmissive.has(m)) {
+          ms.emissive.setHex(originalEmissive.get(m)!);
+          originalEmissive.delete(m);
+        }
+      }
+    }
+  }
+}
+
 function setNDCFromEvent(ev: PointerEvent) {
   const rect = ctx.renderer.domElement.getBoundingClientRect();
   ndc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
@@ -217,6 +248,59 @@ function onPointerDown(ev: PointerEvent) {
 function onPointerMove(ev: PointerEvent) {
   if (!drag.active) return;
   if (!intersectOnPlane(ev, drag.plane, drag.last)) return;
+
+  // Determine axis/layer and begin live rotation when movement is enough
+  const delta = drag.last.clone().sub(drag.start);
+  const d1 = delta.dot(drag.t1);
+  const d2 = delta.dot(drag.t2);
+  const magnitude = Math.hypot(d1, d2);
+  const startThreshold = step * 0.05;
+
+  if (!pivot) {
+    if (magnitude < startThreshold || !drag.picked) return;
+
+    useT1 = Math.abs(d1) >= Math.abs(d2);
+    const tangent = useT1 ? drag.t1 : drag.t2;
+    const axisVec = drag.n.clone().cross(tangent).normalize();
+    const axAbs = [Math.abs(axisVec.x), Math.abs(axisVec.y), Math.abs(axisVec.z)];
+    const maxI = axAbs[0] > axAbs[1] ? (axAbs[0] > axAbs[2] ? 0 : 2) : (axAbs[1] > axAbs[2] ? 1 : 2);
+    layerAxis = (['x', 'y', 'z'] as const)[maxI];
+    axisDir = Math.sign((axisVec as any)[layerAxis]) || 1;
+
+    // Determine layer using world coordinates
+    const wp = new THREE.Vector3();
+    drag.picked.getWorldPosition(wp);
+    layerVal = Math.round(((wp as any)[layerAxis]) / step) * step;
+
+    // Build pivot and attach layer cubelets (select in WORLD space)
+    pivot = new THREE.Object3D();
+    cube.add(pivot);
+    const eps = step * 0.3; // tolerant but < step/2 to avoid adjacent layers
+    selected = [];
+    const children = [...cube.children];
+    for (const child of children) {
+      if (child === pivot) continue;
+      const wpc = new THREE.Vector3();
+      child.getWorldPosition(wpc);
+      const value = (wpc as any)[layerAxis];
+      if (Math.abs(value - layerVal) < eps) {
+        pivot.attach(child);
+        selected.push(child);
+      }
+    }
+    currentAngle = 0;
+    if (layerAxis) showActiveAxis(layerAxis);
+    setHighlighted(selected, true);
+    debugLog('drag:layer-start', { layerAxis, layerVal, selected: selected.length });
+  }
+
+  // If pivot is set, rotate layer continuously
+  if (pivot && layerAxis) {
+    const signed = (useT1 ? d1 : d2); // world units
+    const angle = (signed / step) * (Math.PI / 2) * axisDir;
+    (pivot.rotation as any)[layerAxis] = angle;
+    currentAngle = angle;
+  }
 }
 
 function onPointerUp(ev: PointerEvent) {
@@ -224,48 +308,27 @@ function onPointerUp(ev: PointerEvent) {
   ctx.renderer.domElement.releasePointerCapture(ev.pointerId);
   controls.enabled = true;
 
-  const end = new THREE.Vector3();
-  if (!intersectOnPlane(ev, drag.plane, end)) {
+  if (!pivot || !layerAxis) {
+    // Nothing significant moved
     drag.active = false;
     return;
   }
 
-  const move = end.clone().sub(drag.start);
-  const d1 = move.dot(drag.t1);
-  const d2 = move.dot(drag.t2);
-  const magnitude = Math.hypot(d1, d2);
+  // Snap to nearest quarter-turn
+  const q = Math.PI / 2;
+  const snapped = Math.round(currentAngle / q) * q;
+  (pivot.rotation as any)[layerAxis] = snapped;
 
-  // Threshold relative to cubelet size
-  const threshold = step * 0.2;
-  if (magnitude < threshold || !drag.picked) {
-    drag.active = false;
-    debugLog('drag:cancel', { magnitude });
-    return;
-  }
-
-  // Choose axis from dominant tangent and face normal
-  const useT1 = Math.abs(d1) >= Math.abs(d2);
-  const tangent = useT1 ? drag.t1 : drag.t2;
-  const s = Math.sign(useT1 ? d1 : d2) || 1;
-  const axisVec = drag.n.clone().cross(tangent).normalize();
-
-  // Pick closest principal axis
-  const axAbs = [Math.abs(axisVec.x), Math.abs(axisVec.y), Math.abs(axisVec.z)];
-  const maxI = axAbs[0] > axAbs[1] ? (axAbs[0] > axAbs[2] ? 0 : 2) : (axAbs[1] > axAbs[2] ? 1 : 2);
-  const axis: Axis = (['x', 'y', 'z'] as const)[maxI];
-  const axisDir = Math.sign((axisVec as any)[axis]) || 1;
-
-  // Determine layer from picked cubelet position
-  const wp = new THREE.Vector3();
-  drag.picked.getWorldPosition(wp);
-  const layerVal = Math.round(((wp as any)[axis]) / step) * step;
-
-  // Compute final 90° turn direction
-  const angle = s * axisDir * (Math.PI / 2);
-  rotateLayer(cube, axis, layerVal, angle, step);
+  // Detach children back to cube and cleanup
+  setHighlighted(selected, false);
+  for (const child of selected) cube.attach(child);
+  cube.remove(pivot);
+  pivot = null;
+  selected = [];
+  layerAxis = null;
+  currentAngle = 0;
   regridCubelets(cube, step);
-  showActiveAxis(axis);
-  debugLog('drag:apply', { axis, layerVal, s, axisDir });
+  debugLog('drag:snap');
 
   drag.active = false;
 }
