@@ -42,6 +42,6 @@
 - [ ] Update `AGENTS.md` when modules/commands change; add architecture diagram.
 
 ## Controls & Debug
-- [ ] Reset cube with key `R` (map to current reset logic: regrid, reset orientation, camera position).
-- [ ] Test Mode toggle with key `T`: display axes indicator (e.g., `THREE.AxesHelper`) and highlight the active rotation axis during interactions.
-- [ ] Add debug logs that can be toggled from code (e.g., `const DEBUG = true` or URL flag `?debug=1`) to trace moves, selected layer, and performance timings.
+- [x] Reset cube with key `0` (rebuild solved cube, regrid, reset camera).
+- [x] Test Mode toggle with key `T`: display axes indicator (e.g., `THREE.AxesHelper`) and highlight the active rotation axis during interactions.
+- [x] Add debug logs that can be toggled from code (e.g., `const DEBUG = true` or URL flag `?debug=1`) to trace moves, selected layer, and performance timings.

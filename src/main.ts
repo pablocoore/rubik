@@ -142,6 +142,138 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Pointer-based face rotation (drag gesture)
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+
+type DragState = {
+  active: boolean;
+  plane: THREE.Plane;
+  start: THREE.Vector3;
+  last: THREE.Vector3;
+  n: THREE.Vector3; // face normal (world)
+  t1: THREE.Vector3; // tangent basis 1
+  t2: THREE.Vector3; // tangent basis 2
+  picked: THREE.Object3D | null;
+};
+
+const drag: DragState = {
+  active: false,
+  plane: new THREE.Plane(),
+  start: new THREE.Vector3(),
+  last: new THREE.Vector3(),
+  n: new THREE.Vector3(),
+  t1: new THREE.Vector3(),
+  t2: new THREE.Vector3(),
+  picked: null
+};
+
+function setNDCFromEvent(ev: PointerEvent) {
+  const rect = ctx.renderer.domElement.getBoundingClientRect();
+  ndc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+  ndc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function intersectOnPlane(ev: PointerEvent, plane: THREE.Plane, out: THREE.Vector3): boolean {
+  setNDCFromEvent(ev);
+  raycaster.setFromCamera(ndc, ctx.camera);
+  const p = raycaster.ray.intersectPlane(plane, out);
+  return !!p;
+}
+
+function onPointerDown(ev: PointerEvent) {
+  if (ev.button !== 0) return; // left only
+  setNDCFromEvent(ev);
+  raycaster.setFromCamera(ndc, ctx.camera);
+  const hits = raycaster.intersectObjects(cube.children, true);
+  const hit = hits[0];
+  if (!hit || !hit.face) return;
+
+  // Compute world-space face normal
+  const n = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
+  const p = hit.point.clone();
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, p);
+
+  // Create stable tangents on the face plane
+  const up = new THREE.Vector3(0, 1, 0);
+  const alt = Math.abs(n.dot(up)) > 0.9 ? new THREE.Vector3(1, 0, 0) : up;
+  const t1 = alt.clone().cross(n).normalize();
+  const t2 = n.clone().cross(t1).normalize();
+
+  // Initialize drag state
+  drag.active = true;
+  drag.plane.copy(plane);
+  drag.n.copy(n);
+  drag.t1.copy(t1);
+  drag.t2.copy(t2);
+  drag.picked = hit.object;
+  intersectOnPlane(ev, drag.plane, drag.start);
+  drag.last.copy(drag.start);
+  controls.enabled = false;
+  ctx.renderer.domElement.setPointerCapture(ev.pointerId);
+  debugLog('drag:start', { n: n.toArray(), p: p.toArray() });
+}
+
+function onPointerMove(ev: PointerEvent) {
+  if (!drag.active) return;
+  if (!intersectOnPlane(ev, drag.plane, drag.last)) return;
+}
+
+function onPointerUp(ev: PointerEvent) {
+  if (!drag.active) return;
+  ctx.renderer.domElement.releasePointerCapture(ev.pointerId);
+  controls.enabled = true;
+
+  const end = new THREE.Vector3();
+  if (!intersectOnPlane(ev, drag.plane, end)) {
+    drag.active = false;
+    return;
+  }
+
+  const move = end.clone().sub(drag.start);
+  const d1 = move.dot(drag.t1);
+  const d2 = move.dot(drag.t2);
+  const magnitude = Math.hypot(d1, d2);
+
+  // Threshold relative to cubelet size
+  const threshold = step * 0.2;
+  if (magnitude < threshold || !drag.picked) {
+    drag.active = false;
+    debugLog('drag:cancel', { magnitude });
+    return;
+  }
+
+  // Choose axis from dominant tangent and face normal
+  const useT1 = Math.abs(d1) >= Math.abs(d2);
+  const tangent = useT1 ? drag.t1 : drag.t2;
+  const s = Math.sign(useT1 ? d1 : d2) || 1;
+  const axisVec = drag.n.clone().cross(tangent).normalize();
+
+  // Pick closest principal axis
+  const axAbs = [Math.abs(axisVec.x), Math.abs(axisVec.y), Math.abs(axisVec.z)];
+  const maxI = axAbs[0] > axAbs[1] ? (axAbs[0] > axAbs[2] ? 0 : 2) : (axAbs[1] > axAbs[2] ? 1 : 2);
+  const axis: Axis = (['x', 'y', 'z'] as const)[maxI];
+  const axisDir = Math.sign((axisVec as any)[axis]) || 1;
+
+  // Determine layer from picked cubelet position
+  const wp = new THREE.Vector3();
+  drag.picked.getWorldPosition(wp);
+  const layerVal = Math.round(((wp as any)[axis]) / step) * step;
+
+  // Compute final 90° turn direction
+  const angle = s * axisDir * (Math.PI / 2);
+  rotateLayer(cube, axis, layerVal, angle, step);
+  regridCubelets(cube, step);
+  showActiveAxis(axis);
+  debugLog('drag:apply', { axis, layerVal, s, axisDir });
+
+  drag.active = false;
+}
+
+ctx.renderer.domElement.addEventListener('pointerdown', onPointerDown);
+ctx.renderer.domElement.addEventListener('pointermove', onPointerMove);
+ctx.renderer.domElement.addEventListener('pointerup', onPointerUp);
+
 // Clean up if needed (e.g., in SPA environments)
 export function dispose() {
   ctx.dispose();
