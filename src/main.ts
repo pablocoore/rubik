@@ -176,24 +176,29 @@ let axisDir = 1; // direction of principal axis
 let useT1 = true; // chosen tangent basis for sign
 let currentAngle = 0;
 
-// Highlighting
-const originalEmissive = new WeakMap<THREE.Material, number>();
+// Highlighting (blend base color toward a highlight color)
+const originalColor = new WeakMap<THREE.Material, number>();
 function setHighlighted(objs: THREE.Object3D[], on: boolean) {
-  const color = 0xffe066;
+  // const highlightHex = 0xffe066; // target highlight color
+  const highlightHex = 0xeeeeee; // target highlight color
+  const t = 0.4; // blend amount [0..1]
+  const highlight = new THREE.Color(highlightHex);
   for (const obj of objs) {
     const mesh = obj as THREE.Mesh;
     const mat = (mesh as any).material as THREE.Material | THREE.Material[] | undefined;
     const mats = Array.isArray(mat) ? mat : mat ? [mat] : [];
     for (const m of mats) {
       const ms = m as any;
-      if (ms && 'emissive' in ms) {
-        if (on) {
-          if (!originalEmissive.has(m)) originalEmissive.set(m, ms.emissive.getHex());
-          ms.emissive.setHex(color);
-        } else if (originalEmissive.has(m)) {
-          ms.emissive.setHex(originalEmissive.get(m)!);
-          originalEmissive.delete(m);
-        }
+      if (!ms || !('color' in ms)) continue;
+      if (on) {
+        if (!originalColor.has(m)) originalColor.set(m, ms.color.getHex());
+        const base = new THREE.Color(originalColor.get(m)!);
+        // Blend base -> highlight by t
+        const blended = base.clone().lerp(highlight, t);
+        ms.color.copy(blended);
+      } else if (originalColor.has(m)) {
+        ms.color.setHex(originalColor.get(m)!);
+        originalColor.delete(m);
       }
     }
   }

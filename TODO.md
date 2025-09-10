@@ -1,10 +1,10 @@
 # TODO
 
 ## Face Interaction (Mouse Drag)
-- [ ] Raycast selected cubelet face; derive face normal and plane.
-- [ ] Collect affected layer (within epsilon of plane) and animate quarter‑turns.
-- [ ] Infer direction from drag vector; support prime and double turns.
-- [ ] Snap to 90° and regrid; update logical state accordingly.
+- [x] Raycast selected cubelet face; derive face normal and plane.
+- [x] Collect affected layer (within epsilon of plane) and animate quarter‑turns.
+- [x] Infer direction from drag vector; support prime and double turns.
+- [x] Snap to 90° and regrid; update logical state accordingly.
 
 ## Move System & Parser
 - [ ] Parse Singmaster: `R U F L D B M E S x y z` with `'` and `2`.
