@@ -20,6 +20,7 @@ const ctx = createRenderContext(container);
 // Scene grid/floor
 const grid = new THREE.GridHelper(20, 20, 0x444444, 0x2a2a2a);
 grid.position.y = -2;
+grid.visible = false; // only visible in Test Mode
 ctx.scene.add(grid);
 
 // Rubik spec
@@ -79,6 +80,7 @@ function showActiveAxis(axis: Axis) {
 function setTestMode(on: boolean) {
   TEST_MODE = on;
   axesHelper.visible = on;
+  grid.visible = on;
   axisIndicator.visible = false;
   debugLog('test-mode', on);
 }
