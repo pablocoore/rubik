@@ -149,7 +149,7 @@ window.addEventListener('keydown', (e) => {
   if (e.key.toUpperCase() === 'S') return scramble();
   if (e.key === '0') return resetView();
   if (e.key.toUpperCase() === 'T') return setTestMode(!TEST_MODE);
-  if (['U', 'R', 'F', 'M', 'L', 'B'].includes(e.key.toUpperCase())) {
+  if (['U', 'D', 'R', 'F', 'M', 'L', 'B'].includes(e.key.toUpperCase())) {
     doMove(e.key, e.shiftKey);
   }
 });
