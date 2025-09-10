@@ -129,6 +129,9 @@ function resetView() {
   // Recreate fresh solved cube
   cube = createRubiksCube(spec);
   ctx.scene.add(cube);
+  // Rewire controllers to new cube
+  queue.setCube(cube);
+  interactor.setCube(cube);
   // Reset camera
   ctx.camera.position.set(4.5, 4.5, 6.5);
   ctx.camera.lookAt(0, 0, 0);

@@ -33,5 +33,8 @@ export class MoveQueue {
     }
     this.running = false;
   }
-}
 
+  setCube(cube: THREE.Group) {
+    this.cube = cube;
+  }
+}

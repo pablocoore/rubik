@@ -60,6 +60,10 @@ export class InteractionController {
     this.dom.addEventListener('pointerup', this.onPointerUp);
   }
 
+  setCube(cube: THREE.Group) {
+    this.cube = cube;
+  }
+
   dispose() {
     this.dom.removeEventListener('pointerdown', this.onPointerDown);
     this.dom.removeEventListener('pointermove', this.onPointerMove);
@@ -196,4 +200,3 @@ export class InteractionController {
     if (this.events.onSnap) this.events.onSnap(axis, layer, snapped, selected);
   }
 }
-
