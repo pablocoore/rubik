@@ -82,6 +82,10 @@ function setTestMode(on: boolean) {
   axesHelper.visible = on;
   grid.visible = on;
   axisIndicator.visible = false;
+  if (!on && axisIndicatorTimer) {
+    window.clearTimeout(axisIndicatorTimer);
+    axisIndicatorTimer = null;
+  }
   debugLog('test-mode', on);
 }
 
