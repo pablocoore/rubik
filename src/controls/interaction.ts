@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LAYER_EPS_RATIO } from '../core/config';
 
 export type Axis = 'x' | 'y' | 'z';
 
@@ -26,11 +27,12 @@ export function rotateLayer(
   const pivot = new THREE.Object3D();
   cube.add(pivot);
 
-  const eps = step * 0.5 * 0.1; // 10% of half-step tolerance
+  const eps = step * LAYER_EPS_RATIO;
   const selected: THREE.Object3D[] = [];
   for (const child of cube.children) {
-    const pos = child.position as THREE.Vector3;
-    const value = axis === 'x' ? pos.x : axis === 'y' ? pos.y : pos.z;
+    const wp = new THREE.Vector3();
+    child.getWorldPosition(wp);
+    const value = axis === 'x' ? wp.x : axis === 'y' ? wp.y : wp.z;
     if (Math.abs(value - layerValue) < eps) {
       // pivot.attach(child);
       selected.push(child);
@@ -51,20 +53,74 @@ export function mapMoveToAxisLayer(
   size: number
 ): { axis: Axis; layer: number; dir: 1 | -1 } | null {
 
-  switch (key.toUpperCase()) {
+  const k = key.toUpperCase();
+  switch (k) {
     case 'U':
-      return { axis: 'y', layer: 1*step, dir: 1 };
+      return { axis: 'y', layer: +1 * step, dir: 1 };
+    case 'D':
+      return { axis: 'y', layer: -1 * step, dir: 1 };
     case 'R':
-      return { axis: 'x', layer: 1, dir: 1 };
+      return { axis: 'x', layer: +1 * step, dir: 1 };
+    case 'L':
+      return { axis: 'x', layer: -1 * step, dir: 1 };
     case 'F':
-      return { axis: 'z', layer: 1*step, dir: 1 };
+      return { axis: 'z', layer: +1 * step, dir: 1 };
+    case 'B':
+      return { axis: 'z', layer: -1 * step, dir: 1 };
     case 'M':
       return { axis: 'x', layer: 0, dir: 1 };
-    case 'L':
-      return { axis: 'x', layer: -1*step, dir: 1 };
-    case 'B':
-      return { axis: 'y', layer: -1 * step, dir: 1 };
     default:
       return null;
   }
+}
+
+export function selectLayerChildren(
+  cube: THREE.Group,
+  axis: Axis,
+  layerValue: number,
+  step: number,
+  epsRatio: number = LAYER_EPS_RATIO
+): THREE.Object3D[] {
+  const eps = step * epsRatio;
+  const selected: THREE.Object3D[] = [];
+  for (const child of cube.children) {
+    const wp = new THREE.Vector3();
+    child.getWorldPosition(wp);
+    const value = axis === 'x' ? wp.x : axis === 'y' ? wp.y : wp.z;
+    if (Math.abs(value - layerValue) < eps) selected.push(child);
+  }
+  return selected;
+}
+
+export function animateLayerRotation(
+  cube: THREE.Group,
+  axis: Axis,
+  layerValue: number,
+  angle: number,
+  step: number,
+  durationMs: number
+): Promise<void> {
+  return new Promise((resolve) => {
+    const pivot = new THREE.Object3D();
+    cube.add(pivot);
+    const selected = selectLayerChildren(cube, axis, layerValue, step);
+    for (const child of selected) pivot.attach(child);
+
+    let start: number | null = null;
+    const initial = (pivot.rotation as any)[axis] as number;
+    function frame(ts: number) {
+      if (start === null) start = ts;
+      const t = Math.min(1, (ts - start) / Math.max(1, durationMs));
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOutQuad
+      (pivot.rotation as any)[axis] = initial + angle * eased;
+      if (t < 1) requestAnimationFrame(frame);
+      else {
+        (pivot.rotation as any)[axis] = initial + angle;
+        for (const child of selected) cube.attach(child);
+        cube.remove(pivot);
+        resolve();
+      }
+    }
+    requestAnimationFrame(frame);
+  });
 }

@@ -15,6 +15,9 @@ export function createRenderContext(container: HTMLElement): RenderContext {
   camera.position.set(4.5, 4.5, 6.5);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
+  // Color space and pixel ratio
+  // @ts-ignore
+  if ('outputColorSpace' in renderer) (renderer as any).outputColorSpace = THREE.SRGBColorSpace;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
@@ -40,9 +43,23 @@ export function createRenderContext(container: HTMLElement): RenderContext {
     renderer,
     dispose: () => {
       window.removeEventListener('resize', resize);
+      // WebGL context cleanup
       renderer.dispose();
       renderer.domElement.remove();
     }
   };
 }
 
+// Guard WebGL context lost/restore
+export function attachContextLossHandlers(renderer: THREE.WebGLRenderer, onRestore: () => void) {
+  const canvas = renderer.domElement;
+  const onLost = (e: Event) => {
+    e.preventDefault();
+    // no-op; wait for restore
+  };
+  const onRestored = () => {
+    onRestore();
+  };
+  canvas.addEventListener('webglcontextlost', onLost as any, false);
+  canvas.addEventListener('webglcontextrestored', onRestored as any, false);
+}
