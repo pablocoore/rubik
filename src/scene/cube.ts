@@ -19,26 +19,24 @@ export function createRubiksCube(spec: RubikSpec): THREE.Group {
   const back = 0x3498db; // blue
   const left = 0xe67e22; // orange
   const right = 0xe74c3c; // red
-  const inner = 0x151515; // inner faces
-
-  const faceColor = (axis: 'x'|'y'|'z', idx: number): number => {
-    if (axis === 'y') return idx > 0 ? up : idx < 0 ? down : inner;
-    if (axis === 'z') return idx > 0 ? front : idx < 0 ? back : inner;
-    return idx > 0 ? right : idx < 0 ? left : inner;
-  };
+  const inner = 0x0a0a0a; // near-black for internal faces
 
   const geo = new THREE.BoxGeometry(cubelet, cubelet, cubelet);
+
+  const min = indices[0];
+  const max = indices[indices.length - 1];
 
   for (const ix of indices) {
     for (const iy of indices) {
       for (const iz of indices) {
+        // BoxGeometry material order: +x (right), -x (left), +y (top), -y (bottom), +z (front), -z (back)
         const materials = [
-          new THREE.MeshStandardMaterial({ color: faceColor('x', +1) }),
-          new THREE.MeshStandardMaterial({ color: faceColor('x', -1) }),
-          new THREE.MeshStandardMaterial({ color: faceColor('y', +1) }),
-          new THREE.MeshStandardMaterial({ color: faceColor('y', -1) }),
-          new THREE.MeshStandardMaterial({ color: faceColor('z', +1) }),
-          new THREE.MeshStandardMaterial({ color: faceColor('z', -1) })
+          new THREE.MeshStandardMaterial({ color: ix === max ? right : inner }),
+          new THREE.MeshStandardMaterial({ color: ix === min ? left : inner }),
+          new THREE.MeshStandardMaterial({ color: iy === max ? up : inner }),
+          new THREE.MeshStandardMaterial({ color: iy === min ? down : inner }),
+          new THREE.MeshStandardMaterial({ color: iz === max ? front : inner }),
+          new THREE.MeshStandardMaterial({ color: iz === min ? back : inner })
         ];
         const mesh = new THREE.Mesh(geo, materials);
         mesh.position.set(ix * step, iy * step, iz * step);
@@ -63,4 +61,3 @@ export function regridCubelets(group: THREE.Group, step: number) {
     child.rotation.z = Math.round(child.rotation.z / (Math.PI / 2)) * (Math.PI / 2);
   });
 }
-
