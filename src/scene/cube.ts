@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 export type RubikSpec = {
   size: number; // layers per edge (3 for 3x3)
@@ -21,7 +22,10 @@ export function createRubiksCube(spec: RubikSpec): THREE.Group {
   const right = 0xe74c3c; // red
   const inner = 0x0a0a0a; // near-black for internal faces
 
-  const geo = new THREE.BoxGeometry(cubelet, cubelet, cubelet);
+  // Use rounded box geometry for softer edges/corners
+  const CORNER_RADIUS = Math.min(cubelet * 0.1, cubelet * 0.24);
+  const SEGMENTS = 4; // small number for gentle rounding
+  const geo = new RoundedBoxGeometry(cubelet, cubelet, cubelet, SEGMENTS, CORNER_RADIUS);
 
   const min = indices[0];
   const max = indices[indices.length - 1];
