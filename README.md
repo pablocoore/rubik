@@ -4,8 +4,7 @@ Interactive 3D Rubik’s Cube built with Three.js and Vite. Mobile-friendly UI w
 
 ## Live Demo
 
-- GitHub Pages: https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/
-  - Replace `YOUR_USERNAME` and `YOUR_REPO_NAME` after pushing this repository to GitHub.
+- GitHub Pages: https://pablocoore.github.io/rubik/
 
 ## Getting Started
 
@@ -40,4 +39,3 @@ Notes:
 - Manifest: `public/manifest.webmanifest`
 - Service Worker: `public/sw.js`
 - Icons: `public/icons/` (maskable + standard + Apple touch)
-
