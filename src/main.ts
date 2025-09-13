@@ -51,10 +51,51 @@ function animate() {
 animate();
 
 // UI buttons (mobile/desktop toolbar)
-const btnReset = document.getElementById('btn-reset');
-const btnScramble = document.getElementById('btn-scramble');
-if (btnReset) btnReset.addEventListener('click', () => resetView());
-if (btnScramble) btnScramble.addEventListener('click', () => scramble());
+const toolbar = document.getElementById('toolbar') as HTMLDivElement | null;
+const btnReset = document.getElementById('btn-reset') as HTMLButtonElement | null;
+const btnScramble = document.getElementById('btn-scramble') as HTMLButtonElement | null;
+const btnHelp = document.getElementById('btn-help') as HTMLButtonElement | null;
+const btnInstall = document.getElementById('btn-install') as HTMLButtonElement | null;
+const overlayOnboarding = document.getElementById('onboarding') as HTMLDivElement | null;
+const overlayHelp = document.getElementById('help') as HTMLDivElement | null;
+const btnOnboardDismiss = document.getElementById('btn-onboard-dismiss') as HTMLButtonElement | null;
+
+function isMobile() {
+  return (
+    (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+    'ontouchstart' in window ||
+    (navigator as any).maxTouchPoints > 0
+  );
+}
+
+function vibrate(ms: number) {
+  if ('vibrate' in navigator) navigator.vibrate(ms);
+}
+
+if (isMobile() && toolbar) {
+  toolbar.style.display = 'flex';
+  // Optional: pad bottom for safe area, already handled by env(safe-area-inset-bottom)
+  const showOverlay = (el: HTMLElement | null, show: boolean) => {
+    if (!el) return;
+    el.style.display = show ? 'flex' : 'none';
+  };
+
+  if (btnReset) btnReset.addEventListener('click', () => { vibrate(10); resetView(); });
+  if (btnScramble) btnScramble.addEventListener('click', () => { vibrate(10); scramble(); });
+  if (btnHelp) btnHelp.addEventListener('click', () => showOverlay(overlayHelp, true));
+  const helpClose = document.getElementById('btn-help-close') as HTMLButtonElement | null;
+  if (helpClose) helpClose.addEventListener('click', () => showOverlay(overlayHelp, false));
+
+  // One-time onboarding
+  const ONBOARD_KEY = 'onboarding_seen_v1';
+  if (!localStorage.getItem(ONBOARD_KEY)) {
+    showOverlay(overlayOnboarding, true);
+    if (btnOnboardDismiss) btnOnboardDismiss.addEventListener('click', () => {
+      showOverlay(overlayOnboarding, false);
+      localStorage.setItem(ONBOARD_KEY, '1');
+    });
+  }
+}
 
 // Keyboard interactions
 // Test mode visuals
@@ -194,5 +235,26 @@ if (import.meta.env && (import.meta as any).env?.PROD && 'serviceWorker' in navi
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       if (DEBUG) console.warn('[sw] registration failed', err);
     });
+  });
+}
+
+// PWA: custom Install prompt button (mobile only)
+let deferredInstall: any = null;
+window.addEventListener('beforeinstallprompt', (e: any) => {
+  e.preventDefault();
+  deferredInstall = e;
+  if (isMobile() && btnInstall) btnInstall.style.display = 'inline-block';
+});
+if (btnInstall) {
+  btnInstall.addEventListener('click', async () => {
+    vibrate(10);
+    if (!deferredInstall) return;
+    deferredInstall.prompt();
+    const choice = await deferredInstall.userChoice.catch(() => ({} as any));
+    if (choice && choice.outcome) {
+      if (DEBUG) console.log('[pwa] install outcome:', choice.outcome);
+    }
+    deferredInstall = null;
+    btnInstall.style.display = 'none';
   });
 }

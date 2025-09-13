@@ -8,23 +8,10 @@
   "description": "Rotate, scramble, and solve a 3D Rubik's Cube.",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "src": "data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230e0e10'/><rect x='64' y='64' width='384' height='384' rx='96' fill='%231f8fff'/><text x='50%25' y='58%25' text-anchor='middle' font-family='system-ui, sans-serif' font-weight='700' font-size='260' fill='white'>R</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
-

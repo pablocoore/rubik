@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Rubik Cube • Three.js</title>
+    <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/ea1gkQAAAAASUVORK5CYII=" />
     <style>
       html, body, #app { height: 100%; margin: 0; }
       canvas { display: block; touch-action: none; }
@@ -22,6 +23,7 @@
         display: flex; gap: 10px; padding: 10px; box-sizing: border-box;
         background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0.2));
         -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        display: none; /* shown only on mobile via JS */
       }
       .toolbar button {
         flex: 1; height: 48px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18);
@@ -29,6 +31,26 @@
         letter-spacing: 0.2px;
       }
       .toolbar button:active { transform: translateY(1px); opacity: 0.9; }
+      .toolbar .spacer { width: 8px; }
+      .toolbar .secondary { flex: 0 0 auto; padding: 0 12px; }
+
+      /* Overlays */
+      .overlay {
+        position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.48); color: #fff; z-index: 10;
+      }
+      .overlay .card {
+        background: rgba(20,20,22,0.9); border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px; padding: 16px; width: min(92vw, 420px);
+        font: 14px/1.5 system-ui, sans-serif;
+      }
+      .overlay .card h3 { margin: 0 0 8px; font-size: 16px; }
+      .overlay .actions { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+      .overlay .actions button { height: 40px; padding: 0 14px; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .toolbar button:active { transform: none; }
+      }
     </style>
   </head>
   <body>
@@ -38,9 +60,38 @@
       <div>Moves: <kbd>U</kbd>/<kbd>R</kbd>/<kbd>D</kbd>/<kbd>L</kbd>/<kbd>B</kbd>/<kbd>F</kbd>/<kbd>M</kbd> (+ Shift = prime)</div>
       <div>Scramble: <kbd>S</kbd> · Reset: <kbd>0</kbd> · Test Mode: <kbd>T</kbd></div>
     </div>
-    <div class="toolbar" role="toolbar" aria-label="Cube actions">
+    <div class="toolbar" id="toolbar" role="toolbar" aria-label="Cube actions">
       <button id="btn-reset" type="button" aria-label="Reset cube">Reset</button>
       <button id="btn-scramble" type="button" aria-label="Scramble cube">Scramble</button>
+      <button id="btn-help" class="secondary" type="button" aria-label="Help">?</button>
+      <button id="btn-install" class="secondary" type="button" aria-label="Install app" style="display:none">Install</button>
+    </div>
+
+    <div class="overlay" id="onboarding" role="dialog" aria-modal="true" aria-labelledby="onboard-title">
+      <div class="card">
+        <h3 id="onboard-title">Tips</h3>
+        <div>- Drag on the cube to rotate a face.</div>
+        <div>- Pinch to zoom. Two fingers to orbit camera.</div>
+        <div style="opacity:.8">Use the toolbar to Scramble or Reset.</div>
+        <div class="actions">
+          <button id="btn-onboard-dismiss" type="button" aria-label="Dismiss tips">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="help" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <div class="card">
+        <h3 id="help-title">Help</h3>
+        <div>Gestures:</div>
+        <ul>
+          <li>One finger: rotate a face.</li>
+          <li>Two fingers: orbit camera.</li>
+          <li>Pinch: zoom in/out.</li>
+        </ul>
+        <div class="actions">
+          <button id="btn-help-close" type="button" aria-label="Close help">Close</button>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

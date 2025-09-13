@@ -4,16 +4,16 @@ This checklist focuses on user experience and interface improvements for mobile.
 
 ## Quick Access Controls
 - [x] Add a persistent bottom toolbar with large touch targets.
-  - Buttons: Reset cube, Scramble cube.
-  - Visible on mobile and desktop; sized for thumbs (44–48px min height).
+  - Buttons: Reset cube, Scramble cube, Help (?), Install.
+  - Visible only on mobile; sized for thumbs (44–48px min height).
   - Hooked to existing logic in `src/main.ts`.
-- [ ] Add visual/haptic feedback on button press.
-  - Press states (scale/opacity), `navigator.vibrate(10)` if supported.
+- [x] Add visual/haptic feedback on button press.
+  - Press states (opacity), `navigator.vibrate(10)` if supported.
 
 ## Onboarding & Help
-- [ ] Add a one-time onboarding tip for gestures (drag to rotate, pinch to zoom, two-finger orbit).
+- [x] Add a one-time onboarding tip for gestures (drag to rotate, pinch to zoom, two-finger orbit).
   - Dismissible, stored in `localStorage`.
-- [ ] Add a compact in-app Help sheet accessible via a `?` button.
+- [x] Add a compact in-app Help sheet accessible via a `?` button.
 
 ## Touch & Gestures (UX)
 - [x] Prevent page scroll during canvas interaction via `touch-action: none` on the canvas area.
@@ -22,14 +22,14 @@ This checklist focuses on user experience and interface improvements for mobile.
 ## Layout & Accessibility
 - [ ] Ensure toolbar does not overlap critical 3D content on very short screens.
   - Add bottom padding to canvas or auto-hide toolbar after a few seconds of inactivity.
-- [ ] Provide accessible names/labels for buttons and keyboard focus styles.
-- [ ] Respect prefers-reduced-motion for any UI transitions.
+- [x] Provide accessible names/labels for buttons and keyboard focus styles.
+- [x] Respect prefers-reduced-motion for any UI transitions.
 
 ## PWA Installability
 - [x] Add a web app manifest (`public/manifest.webmanifest`).
 - [x] Register a service worker (`public/sw.js`) for basic offline capability.
-- [ ] Add app icons (192, 512, maskable) and Apple touch icons.
-- [ ] Add an optional custom “Install App” prompt button when `beforeinstallprompt` fires.
+- [x] Add app icons (SVG data URL; maskable-any) and Apple touch icon (base64 placeholder PNG).
+- [x] Add an optional custom “Install App” prompt button when `beforeinstallprompt` fires (mobile only).
 
 ## Orientation & UI Polish
 - [ ] Handle orientation change UX: keep toolbar usable in landscape, avoid overlapping the notch/home indicator (`viewport-fit=cover`).
@@ -39,14 +39,19 @@ This checklist focuses on user experience and interface improvements for mobile.
 
 ## Implementation Notes
 
-### Bottom Toolbar (Reset / Scramble)
-- Implemented in `index.html` with `.toolbar` container and two buttons: `Reset` and `Scramble`.
-- `src/main.ts` attaches listeners to `#btn-reset` and `#btn-scramble` and calls existing `resetView()` and `scramble()`.
+### Bottom Toolbar (Reset / Scramble / Help / Install)
+- Implemented in `index.html` with `.toolbar` container and buttons: `Reset`, `Scramble`, `?` (Help), and `Install`.
+- Toolbar is only shown on mobile (coarse pointer/touch detection).
+- `src/main.ts` attaches listeners to call existing `resetView()` and `scramble()` and controls overlays/help/install.
 
 ### PWA Scaffolding
-- `public/manifest.webmanifest` contains core metadata: `name`, `short_name`, `start_url`, `display`, `theme_color`, `background_color`.
+- `public/manifest.webmanifest` contains core metadata and an inline SVG icon (maskable-any) via data URL.
 - `public/sw.js` registers a minimal caching strategy for app shell; registration gated behind `import.meta.env.PROD` in `src/main.ts`.
-- Icons are placeholder (TODO) to be added later.
+- Apple touch icon is added as a base64 placeholder; consider replacing with real PNG assets later.
+
+### Onboarding & Help
+- On first mobile visit, a dismissible Onboarding overlay explains gestures. State stored in `localStorage`.
+- A Help overlay is accessible from the `?` button.
 
 ### Touch Interaction
 - Added `touch-action: none` to the canvas via CSS in `index.html` to reduce scroll conflicts on mobile.
@@ -58,4 +63,3 @@ This checklist focuses on user experience and interface improvements for mobile.
 - [ ] Test on iOS Safari add-to-home-screen (standalone launches, status bar color ok).
 - [ ] Verify toolbar works across common devices (iPhone SE/12/14 Pro Max, Pixel 5/7, small tablets).
 - [ ] Confirm offline start for already-visited users.
-
