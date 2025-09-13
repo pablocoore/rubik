@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Rubik Cube • Three.js</title>
-    <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/ea1gkQAAAAASUVORK5CYII=" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
     <style>
       html, body, #app { height: 100%; margin: 0; }
       canvas { display: block; touch-action: none; }
@@ -18,6 +18,8 @@
         border-radius: 6px;
       }
       .hud kbd { background:#222; padding:2px 5px; border-radius:4px; }
+      @media (pointer: coarse) { .hud { display: none !important; } }
+      @media all and (display-mode: standalone) { .hud { display: none !important; } }
       .toolbar {
         position: fixed; left: 0; right: 0; bottom: 0; padding: env(safe-area-inset-bottom);
         display: flex; gap: 10px; padding: 10px; box-sizing: border-box;
@@ -50,6 +52,11 @@
 
       @media (prefers-reduced-motion: reduce) {
         .toolbar button:active { transform: none; }
+      }
+      /* Landscape tweaks for short heights */
+      @media (max-height: 420px) {
+        .toolbar { padding: 6px; }
+        .toolbar button { height: 42px; font-size: 14px; }
       }
     </style>
   </head>
