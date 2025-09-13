@@ -50,6 +50,12 @@ function animate() {
 }
 animate();
 
+// UI buttons (mobile/desktop toolbar)
+const btnReset = document.getElementById('btn-reset');
+const btnScramble = document.getElementById('btn-scramble');
+if (btnReset) btnReset.addEventListener('click', () => resetView());
+if (btnScramble) btnScramble.addEventListener('click', () => scramble());
+
 // Keyboard interactions
 // Test mode visuals
 const axesHelper = new THREE.AxesHelper(3);
@@ -180,4 +186,13 @@ attachContextLossHandlers(ctx.renderer, () => {
 export function dispose() {
   interactor.dispose();
   ctx.dispose();
+}
+
+// Register Service Worker (PWA) in production
+if (import.meta.env && (import.meta as any).env?.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      if (DEBUG) console.warn('[sw] registration failed', err);
+    });
+  });
 }

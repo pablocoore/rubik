@@ -2,17 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0e0e10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>Rubik Cube • Three.js</title>
     <style>
       html, body, #app { height: 100%; margin: 0; }
-      canvas { display: block; }
+      canvas { display: block; touch-action: none; }
       .hud {
         position: fixed; left: 12px; bottom: 12px; padding: 8px 10px;
         background: rgba(0,0,0,0.5); color: #fff; font: 12px/1.4 system-ui, sans-serif;
         border-radius: 6px;
       }
       .hud kbd { background:#222; padding:2px 5px; border-radius:4px; }
+      .toolbar {
+        position: fixed; left: 0; right: 0; bottom: 0; padding: env(safe-area-inset-bottom);
+        display: flex; gap: 10px; padding: 10px; box-sizing: border-box;
+        background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0.2));
+        -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+      }
+      .toolbar button {
+        flex: 1; height: 48px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.08); color:#fff; font: 600 15px/1 system-ui, sans-serif;
+        letter-spacing: 0.2px;
+      }
+      .toolbar button:active { transform: translateY(1px); opacity: 0.9; }
     </style>
   </head>
   <body>
@@ -21,6 +37,10 @@
       <div>Camera: Orbit (drag), Zoom (wheel)</div>
       <div>Moves: <kbd>U</kbd>/<kbd>R</kbd>/<kbd>D</kbd>/<kbd>L</kbd>/<kbd>B</kbd>/<kbd>F</kbd>/<kbd>M</kbd> (+ Shift = prime)</div>
       <div>Scramble: <kbd>S</kbd> · Reset: <kbd>0</kbd> · Test Mode: <kbd>T</kbd></div>
+    </div>
+    <div class="toolbar" role="toolbar" aria-label="Cube actions">
+      <button id="btn-reset" type="button" aria-label="Reset cube">Reset</button>
+      <button id="btn-scramble" type="button" aria-label="Scramble cube">Scramble</button>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
