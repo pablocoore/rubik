@@ -27,6 +27,26 @@ export function createRubiksCube(spec: RubikSpec): THREE.Group {
   const SEGMENTS = 4; // small number for gentle rounding
   const geo = new RoundedBoxGeometry(cubelet, cubelet, cubelet, SEGMENTS, CORNER_RADIUS);
 
+  // Rounded sticker geometry (slightly inset square with rounded corners)
+  const stickerSize = cubelet * 0.92;
+  const stickerRadius = Math.min(stickerSize * 0.14, stickerSize * 0.45);
+  const stickerShape = new THREE.Shape();
+  {
+    const w = stickerSize, h = stickerSize, r = stickerRadius;
+    const x = -w / 2, y = -h / 2;
+    stickerShape.moveTo(x + r, y);
+    stickerShape.lineTo(x + w - r, y);
+    stickerShape.quadraticCurveTo(x + w, y, x + w, y + r);
+    stickerShape.lineTo(x + w, y + h - r);
+    stickerShape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    stickerShape.lineTo(x + r, y + h);
+    stickerShape.quadraticCurveTo(x, y + h, x, y + h - r);
+    stickerShape.lineTo(x, y + r);
+    stickerShape.quadraticCurveTo(x, y, x + r, y);
+  }
+  const stickerGeo = new THREE.ShapeGeometry(stickerShape, 24);
+  const STICKER_EPS = 0.002; // slight offset to prevent z-fighting
+
   const min = indices[0];
   const max = indices[indices.length - 1];
 
@@ -46,6 +66,46 @@ export function createRubiksCube(spec: RubikSpec): THREE.Group {
         mesh.position.set(ix * step, iy * step, iz * step);
         (mesh as any).grid = { x: ix, y: iy, z: iz };
         group.add(mesh);
+
+        // Add rounded sticker overlays for exposed faces (mobile-friendly look)
+        const stickerMaterial = (hex: number) =>
+          new THREE.MeshBasicMaterial({ color: hex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+
+        if (ix === max) {
+          const s = new THREE.Mesh(stickerGeo, stickerMaterial(right));
+          s.position.x = cubelet / 2 + STICKER_EPS;
+          s.rotation.y = -Math.PI / 2;
+          mesh.add(s);
+        }
+        if (ix === min) {
+          const s = new THREE.Mesh(stickerGeo, stickerMaterial(left));
+          s.position.x = -cubelet / 2 - STICKER_EPS;
+          s.rotation.y = Math.PI / 2;
+          mesh.add(s);
+        }
+        if (iy === max) {
+          const s = new THREE.Mesh(stickerGeo, stickerMaterial(up));
+          s.position.y = cubelet / 2 + STICKER_EPS;
+          s.rotation.x = -Math.PI / 2;
+          mesh.add(s);
+        }
+        if (iy === min) {
+          const s = new THREE.Mesh(stickerGeo, stickerMaterial(down));
+          s.position.y = -cubelet / 2 - STICKER_EPS;
+          s.rotation.x = Math.PI / 2;
+          mesh.add(s);
+        }
+        if (iz === max) {
+          const s = new THREE.Mesh(stickerGeo, stickerMaterial(front));
+          s.position.z = cubelet / 2 + STICKER_EPS;
+          mesh.add(s);
+        }
+        if (iz === min) {
+          const s = new THREE.Mesh(stickerGeo, stickerMaterial(back));
+          s.position.z = -cubelet / 2 - STICKER_EPS;
+          s.rotation.y = Math.PI;
+          mesh.add(s);
+        }
       }
     }
   }
