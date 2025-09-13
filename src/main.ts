@@ -232,7 +232,8 @@ export function dispose() {
 // Register Service Worker (PWA) in production
 if (import.meta.env && (import.meta as any).env?.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
+    const swUrl = `${(import.meta as any).env?.BASE_URL || '/'}sw.js`;
+    navigator.serviceWorker.register(swUrl).catch((err) => {
       if (DEBUG) console.warn('[sw] registration failed', err);
     });
   });
